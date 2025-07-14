@@ -1,0 +1,57 @@
+name: Update npl Homebrew Formula
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set version variable
+        run: echo "VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+
+      - name: Download binaries and calculate checksums
+        run: |
+          declare -A archs=(
+            [macos_aarch64]="npl-cli-macos-aarch64-${VERSION}"
+            [macos_x86_64]="npl-cli-macos-x86_64-${VERSION}"
+            [linux_aarch64]="npl-cli-linux-aarch64-${VERSION}"
+            [linux_x86_64]="npl-cli-linux-x86_64-${VERSION}"
+          )
+          for arch in "${!archs[@]}"; do
+            url="https://github.com/NoumenaDigital/npl-cli/releases/download/${VERSION}/${archs[$arch]}"
+            echo "Downloading $url"
+            curl -L -o "$arch" "$url"
+            sha256=$(shasum -a 256 "$arch" | awk '{print $1}')
+            echo "${arch}_SHA256=$sha256" >> $GITHUB_ENV
+          done
+
+      - name: Update formula file
+        run: |
+          sed -i '' -e "s/^  version \".*\"/  version \"${VERSION}\"/" npl.rb
+          
+          # macOS ARM
+          sed -i '' -e "s|url \".*npl-cli-macos-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${VERSION}/npl-cli-macos-aarch64-${VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*macos-aarch64/!b;n;s/sha256 \".*\"/sha256 \"${macos_aarch64_SHA256}\"/" npl.rb
+          
+          # macOS Intel
+          sed -i '' -e "s|url \".*npl-cli-macos-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${VERSION}/npl-cli-macos-x86_64-${VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*macos-x86_64/!b;n;s/sha256 \".*\"/sha256 \"${macos_x86_64_SHA256}\"/" npl.rb
+          
+          # Linux ARM
+          sed -i '' -e "s|url \".*npl-cli-linux-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${VERSION}/npl-cli-linux-aarch64-${VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*linux-aarch64/!b;n;s/sha256 \".*\"/sha256 \"${linux_aarch64_SHA256}\"/" npl.rb
+          
+          # Linux Intel
+          sed -i '' -e "s|url \".*npl-cli-linux-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${VERSION}/npl-cli-linux-x86_64-${VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*linux-x86_64/!b;n;s/sha256 \".*\"/sha256 \"${linux_x86_64_SHA256}\"/" npl.rb
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Update npl formula to version ${{ env.VERSION }}"
+          branch: master
