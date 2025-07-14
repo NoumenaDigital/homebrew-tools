@@ -29,12 +29,12 @@ class Npl < Formula
   end
 
   test do
-    system "#{bin}/npl", "--help"
+    system "#{bin}/npl", "help"
   end
 
   livecheck do
       url :stable
       regex(/^v?(\d+(?:\.\d+)+)$/i)
-    end
+  end
 
 end
