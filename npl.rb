@@ -1,5 +1,5 @@
 class Npl < Formula
-  desc "CLI for NPL (Noumena Protocol Language)"
+  desc "CLI for NPL (NOUMENA Protocol Language)"
   homepage "https://github.com/NoumenaDigital/npl-cli"
   version "2025.1.9"
   license "Apache-2.0"
