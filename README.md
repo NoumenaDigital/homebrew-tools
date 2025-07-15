@@ -17,5 +17,5 @@ Since our formula is self-hosted, you need to tap our repository first.
 Tapping and installation can be done in one step using the following command:
 
 ```bash
-  brew install NoumenaDigital/tools/npl
+brew install NoumenaDigital/tools/npl
 ```
