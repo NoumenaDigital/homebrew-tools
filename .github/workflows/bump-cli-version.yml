@@ -1,5 +1,8 @@
 name: "Bump NPL CLI version"
 on:
+  push:
+    branches:
+      - ST-4775-automate-cli-version-bump
   workflow_dispatch:
     inputs:
       CLI_VERSION:
