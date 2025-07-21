@@ -1,0 +1,113 @@
+name: "Bump NPL CLI version"
+on:
+  workflow_dispatch:
+    inputs:
+      CLI_VERSION:
+        description: "NPL CLI version to bump to"
+        required: true
+
+env:
+  CI_PIPELINE_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  PLATFORM_VERSION_TAG_LINK: "https://github.com/NoumenaDigital/npl-cli/releases/tag/${{ inputs.CLI_VERSION }}"
+  SLACK_WEBHOOK: "${{ secrets.SLACK_URL }}"
+  SLACK_USERNAME: "bumperBot"
+  SLACK_ICON: "https://avatars.githubusercontent.com/u/56019787?s=50&v=4"
+  SLACK_CHANNEL: "#platform-status"
+  SLACK_TITLE: " " # needs to be a space rather than omitted in order to suppress the title
+  SLACK_FOOTER: "homebrew-tools#bump-cli-version.yml"
+  MSG_MINIMAL: true
+
+jobs:
+  bump_verify:
+    name: "Bump NPL CLI version in formula"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Set Git user"
+        run: |
+          git config --global user.name "noumenadigital-bot"
+          git config --global user.email "noumenadigital-bot@users.noreply.github.com"
+
+      - name: "Install Homebrew"
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> $GITHUB_ENV
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"    
+
+      - name: "Download binaries and calculate checksums"
+        run: |
+          declare -A archs=(
+            [macos_aarch64]="npl-cli-macos-aarch64-${inputs.CLI_VERSION}"
+            [macos_x86_64]="npl-cli-macos-x86_64-${inputs.CLI_VERSION}"
+            [linux_aarch64]="npl-cli-linux-aarch64-${inputs.CLI_VERSION}"
+            [linux_x86_64]="npl-cli-linux-x86_64-${inputs.CLI_VERSION}"
+          )
+          for arch in "${!archs[@]}"; do
+            url="https://github.com/NoumenaDigital/npl-cli/releases/download/${inputs.CLI_VERSION}/${archs[$arch]}"
+            echo "Downloading $url"
+            curl -L -o "$arch" "$url"
+            sha256=$(shasum -a 256 "$arch" | awk '{print $1}')
+            echo "${arch}_SHA256=$sha256" >> $GITHUB_ENV
+          done
+
+      - name: "Update formula file"
+        run: |
+          sed -i '' -e "s/^  version \".*\"/  version \"${inputs.CLI_VERSION}\"/" npl.rb
+          
+          # macOS ARM
+          sed -i '' -e "s|url \".*npl-cli-macos-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-macos-aarch64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*macos-aarch64/!b;n;s/sha256 \".*\"/sha256 \"${macos_aarch64_SHA256}\"/" npl.rb
+          
+          # macOS Intel
+          sed -i '' -e "s|url \".*npl-cli-macos-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-macos-x86_64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*macos-x86_64/!b;n;s/sha256 \".*\"/sha256 \"${macos_x86_64_SHA256}\"/" npl.rb
+          
+          # Linux ARM
+          sed -i '' -e "s|url \".*npl-cli-linux-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-linux-aarch64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*linux-aarch64/!b;n;s/sha256 \".*\"/sha256 \"${linux_aarch64_SHA256}\"/" npl.rb
+          
+          # Linux Intel
+          sed -i '' -e "s|url \".*npl-cli-linux-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-linux-x86_64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "/url .*linux-x86_64/!b;n;s/sha256 \".*\"/sha256 \"${linux_x86_64_SHA256}\"/" npl.rb
+
+      - name: "Build and install formula"
+        run: |
+          brew install --build-from-source ./npl.rb
+
+      - name: "Run formula test block"
+        run: |
+          brew test --verbose ./npl.rb
+
+      - uses: tibdex/github-app-token@v2.1.0
+        id: generate-token-pr
+        with:
+          app_id: ${{ secrets.GH_ND_TOKEN_PR_APP_ID }}
+          private_key: ${{ secrets.GH_ND_TOKEN_PR_APP_PRIVATE_KEY }}
+
+      - name: "Create pull request"
+        uses: peter-evans/create-pull-request@v6
+        id: cpr
+        with:
+          title: "Bump NPL CLI version to ${{ inputs.CLI_VERSION }}"
+          commit-message: "Updated NPL CLI version to ${{ inputs.CLI_VERSION }}"
+          branch: "Bump-cli-${{ inputs.CLI_VERSION }}"
+          delete-branch: true
+          token: ${{ steps.generate-token-pr.outputs.token }}
+
+      - name: "Report action required"
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: "Action required"
+          SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION_TAG_LINK }}|${{ inputs.CLI_VERSION }}>."
+          SLACK_COLOR: "660033"
+
+      - name: "Report failure"
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew test> failed for NPL CLI release <${{ env.CLI_VERSION_TAG_LINK }}|${{ inputs.CLI_VERSION }}>."
+          SLACK_COLOR: ${{ job.status }}
