@@ -34,7 +34,7 @@ jobs:
       - name: "Install Homebrew"
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> $GITHUB_ENV
+          echo "PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH" >> $GITHUB_ENV
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"    
 
       - name: "Download binaries and calculate checksums"
