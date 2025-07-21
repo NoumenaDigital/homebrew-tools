@@ -43,13 +43,13 @@ jobs:
       - name: "Download binaries and calculate checksums"
         run: |
           declare -A archs=(
-            [macos_aarch64]="npl-cli-macos-aarch64-${inputs.CLI_VERSION}"
-            [macos_x86_64]="npl-cli-macos-x86_64-${inputs.CLI_VERSION}"
-            [linux_aarch64]="npl-cli-linux-aarch64-${inputs.CLI_VERSION}"
-            [linux_x86_64]="npl-cli-linux-x86_64-${inputs.CLI_VERSION}"
+            [macos_aarch64]="npl-cli-macos-aarch64-${{ inputs.CLI_VERSION }}"
+            [macos_x86_64]="npl-cli-macos-x86_64-${{ inputs.CLI_VERSION }}"
+            [linux_aarch64]="npl-cli-linux-aarch64-${{ inputs.CLI_VERSION }}"
+            [linux_x86_64]="npl-cli-linux-x86_64-${{ inputs.CLI_VERSION }}"
           )
           for arch in "${!archs[@]}"; do
-            url="https://github.com/NoumenaDigital/npl-cli/releases/download/${inputs.CLI_VERSION}/${archs[$arch]}"
+            url="https://github.com/NoumenaDigital/npl-cli/releases/download/${{ inputs.CLI_VERSION }}/${archs[$arch]}"
             echo "Downloading $url"
             curl -L -o "$arch" "$url"
             sha256=$(shasum -a 256 "$arch" | awk '{print $1}')
@@ -58,22 +58,22 @@ jobs:
 
       - name: "Update formula file"
         run: |
-          sed -i '' -e "s/^  version \".*\"/  version \"${inputs.CLI_VERSION}\"/" npl.rb
+          sed -i '' -e "s/^  version \".*\"/  version \"${{ inputs.CLI_VERSION }}\"/" npl.rb
           
           # macOS ARM
-          sed -i '' -e "s|url \".*npl-cli-macos-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-macos-aarch64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "s|url \".*npl-cli-macos-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${{ CLI_VERSION }}/npl-cli-macos-aarch64-${{ inputs.CLI_VERSION }}\"|" npl.rb
           sed -i '' -e "/url .*macos-aarch64/!b;n;s/sha256 \".*\"/sha256 \"${macos_aarch64_SHA256}\"/" npl.rb
           
           # macOS Intel
-          sed -i '' -e "s|url \".*npl-cli-macos-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-macos-x86_64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "s|url \".*npl-cli-macos-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${{ CLI_VERSION }}/npl-cli-macos-x86_64-${{ CLI_VERSION }}\"|" npl.rb
           sed -i '' -e "/url .*macos-x86_64/!b;n;s/sha256 \".*\"/sha256 \"${macos_x86_64_SHA256}\"/" npl.rb
           
           # Linux ARM
-          sed -i '' -e "s|url \".*npl-cli-linux-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-linux-aarch64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "s|url \".*npl-cli-linux-aarch64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${{ CLI_VERSION }}/npl-cli-linux-aarch64-${{ CLI_VERSION }}\"|" npl.rb
           sed -i '' -e "/url .*linux-aarch64/!b;n;s/sha256 \".*\"/sha256 \"${linux_aarch64_SHA256}\"/" npl.rb
           
           # Linux Intel
-          sed -i '' -e "s|url \".*npl-cli-linux-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/npl-cli-linux-x86_64-${inputs.CLI_VERSION}\"|" npl.rb
+          sed -i '' -e "s|url \".*npl-cli-linux-x86_64-.*\"|url \"https://github.com/NoumenaDigital/npl-cli/releases/download/${{ CLI_VERSION }}/npl-cli-linux-x86_64-${{ CLI_VERSION }}\"|" npl.rb
           sed -i '' -e "/url .*linux-x86_64/!b;n;s/sha256 \".*\"/sha256 \"${linux_x86_64_SHA256}\"/" npl.rb
 
       - name: "Build and install formula"
