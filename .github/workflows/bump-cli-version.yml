@@ -8,6 +8,7 @@ on:
       CLI_VERSION:
         description: "NPL CLI version to bump to"
         required: true
+        default: "2025.1.9-1"
 
 env:
   CI_PIPELINE_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
