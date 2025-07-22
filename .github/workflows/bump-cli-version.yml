@@ -112,6 +112,7 @@ jobs:
           title: "Bump NPL CLI version to ${{ env.CLI_VERSION }}"
           commit-message: "Updated NPL CLI version to ${{ env.CLI_VERSION }}"
           branch: "Bump-cli-${{ env.CLI_VERSION }}"
+          base: "master"
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
