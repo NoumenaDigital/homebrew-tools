@@ -120,12 +120,6 @@ jobs:
         run: |
           brew test --verbose ./npl.rb
 
-#      - uses: tibdex/github-app-token@v2.1.0
-#        id: generate-token-pr
-#        with:
-#          app_id: ${{ secrets.GH_ND_TOKEN_PR_APP_ID }}
-#          private_key: ${{ secrets.GH_ND_TOKEN_PR_APP_PRIVATE_KEY }}
-
       - name: "Create pull request"
         uses: peter-evans/create-pull-request@v6
         id: cpr
@@ -137,17 +131,17 @@ jobs:
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: "Report action required"
-#        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
-#        uses: rtCamp/action-slack-notify@v2
-#        env:
-#          SLACK_TITLE: "Action required"
-#          SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.PLATFORM_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
-#          SLACK_COLOR: "660033"
-#
-#      - name: "Report failure"
-#        if: ${{ failure() }}
-#        uses: rtCamp/action-slack-notify@v2
-#        env:
-#          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew test> failed for NPL CLI release <${{ env.PLATFORM_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
-#          SLACK_COLOR: ${{ job.status }}
+      - name: "Report action required"
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: "Action required"
+          SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.PLATFORM_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
+          SLACK_COLOR: "660033"
+
+      - name: "Report failure"
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew test> failed for NPL CLI release <${{ env.PLATFORM_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
+          SLACK_COLOR: ${{ job.status }}
