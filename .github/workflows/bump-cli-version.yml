@@ -21,10 +21,66 @@ env:
   MSG_MINIMAL: true
 
 jobs:
-  bump_verify:
-    name: "Bump NPL CLI version in formula"
-    runs-on: "ubuntu-latest"
+  resolve_version:
+    name: "Resolve CLI version"
+    runs-on: ubuntu-latest
+    outputs:
+      CLI_VERSION: ${{ steps.resolve.outputs.CLI_VERSION }}
+    steps:
+      - name: "Resolve CLI version"
+        id: resolve
+        run: |
+          if [ -z "${{ inputs.CLI_VERSION }}" ]; then
+            version=$(curl -s https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest | jq -r .tag_name)
+          else
+            version="${{ inputs.CLI_VERSION }}"
+          fi
+          echo "Resolved version: $version"
+          echo "CLI_VERSION=$version" >> $GITHUB_ENV
+          echo "CLI_VERSION=$version" >> $GITHUB_OUTPUT
 
+  calculate_checksums:
+    name: "Calculate Checksums"
+    runs-on: ubuntu-latest
+    needs: resolve_version
+    strategy:
+      matrix:
+        arch: [macos_aarch64, macos_x86_64, linux_aarch64, linux_x86_64]
+    outputs:
+      macos_aarch64: ${{ steps.set.outputs.macos_aarch64 }}
+      macos_x86_64: ${{ steps.set.outputs.macos_x86_64 }}
+      linux_aarch64: ${{ steps.set.outputs.linux_aarch64 }}
+      linux_x86_64: ${{ steps.set.outputs.linux_x86_64 }}
+    steps:
+      - name: "Download and calculate checksum"
+        id: set
+        env:
+          CLI_VERSION: ${{ needs.resolve_version.outputs.CLI_VERSION }}
+        run: |
+          declare -A filenames=(
+            [macos_aarch64]="npl-cli-macos-aarch64-${CLI_VERSION}"
+            [macos_x86_64]="npl-cli-macos-x86_64-${CLI_VERSION}"
+            [linux_aarch64]="npl-cli-linux-aarch64-${CLI_VERSION}"
+            [linux_x86_64]="npl-cli-linux-x86_64-${CLI_VERSION}"
+          )
+          filename="${filenames[${{ matrix.arch }}]}"
+          url="https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/$filename"
+          echo "Downloading $url"
+          curl -L -o "$filename" "$url"
+          sha256=$(shasum -a 256 "$filename" | awk '{print $1}')
+          echo "${{ matrix.arch }} checksum: $sha256"
+          echo "${{ matrix.arch }}=$sha256" >> "$GITHUB_OUTPUT"
+
+  update_formula:
+    name: "Update Homebrew Formula"
+    runs-on: ubuntu-latest
+    needs: [resolve_version, calculate_checksums]
+    env:
+      CLI_VERSION: ${{ needs.resolve_version.outputs.CLI_VERSION }}
+      macos_aarch64_SHA256: ${{ needs.calculate_checksums.outputs.macos_aarch64 }}
+      macos_x86_64_SHA256: ${{ needs.calculate_checksums.outputs.macos_x86_64 }}
+      linux_aarch64_SHA256: ${{ needs.calculate_checksums.outputs.linux_aarch64 }}
+      linux_x86_64_SHA256: ${{ needs.calculate_checksums.outputs.linux_x86_64 }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
@@ -34,39 +90,11 @@ jobs:
           git config --global user.name "noumenadigital-bot"
           git config --global user.email "noumenadigital-bot@users.noreply.github.com"
 
-      - name: "Determine CLI version"
-        id: resolve-version
-        run: |
-          if [ -z "${{ inputs.CLI_VERSION }}" ]; then
-            version=$(curl -s https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest | jq -r .tag_name)
-          else
-            version="${{ inputs.CLI_VERSION }}"
-          fi
-          echo "Resolved version: $version"
-          echo "CLI_VERSION=$version" >> $GITHUB_ENV
-          echo "PLATFORM_VERSION_TAG_LINK=https://github.com/NoumenaDigital/npl-cli/releases/tag/$version" >> $GITHUB_ENV
-
       - name: "Install Homebrew"
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           echo "/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-
-      - name: "Download binaries and calculate checksums"
-        run: |
-          declare -A archs=(
-            [macos_aarch64]="npl-cli-macos-aarch64-${CLI_VERSION}"
-            [macos_x86_64]="npl-cli-macos-x86_64-${CLI_VERSION}"
-            [linux_aarch64]="npl-cli-linux-aarch64-${CLI_VERSION}"
-            [linux_x86_64]="npl-cli-linux-x86_64-${CLI_VERSION}"
-          )
-          for arch in "${!archs[@]}"; do
-            url="https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/${archs[$arch]}"
-            echo "Downloading $url"
-            curl -L -o "$arch" "$url"
-            sha256=$(shasum -a 256 "$arch" | awk '{print $1}')
-            echo "${arch}_SHA256=$sha256" >> $GITHUB_ENV
-          done
 
       - name: "Ensure formula file is present"
         run: |
