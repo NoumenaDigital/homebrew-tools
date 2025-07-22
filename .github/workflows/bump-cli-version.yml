@@ -99,11 +99,11 @@ jobs:
         run: |
           brew test --verbose ./npl.rb
 
-      - uses: tibdex/github-app-token@v2.1.0
-        id: generate-token-pr
-        with:
-          app_id: ${{ secrets.GH_ND_TOKEN_PR_APP_ID }}
-          private_key: ${{ secrets.GH_ND_TOKEN_PR_APP_PRIVATE_KEY }}
+#      - uses: tibdex/github-app-token@v2.1.0
+#        id: generate-token-pr
+#        with:
+#          app_id: ${{ secrets.GH_ND_TOKEN_PR_APP_ID }}
+#          private_key: ${{ secrets.GH_ND_TOKEN_PR_APP_PRIVATE_KEY }}
 
       - name: "Create pull request"
         uses: peter-evans/create-pull-request@v6
@@ -113,7 +113,7 @@ jobs:
           commit-message: "Updated NPL CLI version to ${{ env.CLI_VERSION }}"
           branch: "Bump-cli-${{ env.CLI_VERSION }}"
           delete-branch: true
-          token: ${{ steps.generate-token-pr.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Report action required"
         if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
