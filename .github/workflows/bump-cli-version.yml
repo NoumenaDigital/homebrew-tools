@@ -8,7 +8,6 @@ on:
     inputs:
       CLI_VERSION:
         description: "NPL CLI version to go to"
-        required: false
 
 env:
   CI_PIPELINE_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
