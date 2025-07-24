@@ -15,7 +15,7 @@ env:
   SLACK_WEBHOOK: "${{ secrets.SLACK_URL }}"
   SLACK_USERNAME: "bumperBot"
   SLACK_ICON: "https://avatars.githubusercontent.com/u/56019787?s=50&v=4"
-  SLACK_CHANNEL: "#platform-status"
+  SLACK_CHANNEL: "#test-slack"
   SLACK_TITLE: " "
   SLACK_FOOTER: "homebrew-tools#bump-cli-version.yml"
   MSG_MINIMAL: true
@@ -29,11 +29,13 @@ jobs:
     steps:
       - name: "Resolve CLI version"
         id: resolve
+        env:
+          INPUT_CLI_VERSION: ${{ inputs.CLI_VERSION }}
         run: |
-          if [ -z "${{ inputs.CLI_VERSION }}" ]; then
+          if [ -z "$INPUT_CLI_VERSION" ]; then
             version=$(curl -s https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest | jq -r .tag_name)
           else
-            version="${{ inputs.CLI_VERSION }}"
+            version="$INPUT_CLI_VERSION"
           fi
           echo "Resolved version: $version"
           echo "CLI_VERSION=$version" >> $GITHUB_ENV
