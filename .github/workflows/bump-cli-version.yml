@@ -27,19 +27,17 @@ jobs:
     outputs:
       CLI_VERSION: ${{ steps.resolve.outputs.CLI_VERSION }}
     steps:
-      - name: "Resolve CLI version"
-        id: resolve
-        env:
-          INPUT_CLI_VERSION: ${{ inputs.CLI_VERSION }}
+      - name: "Determine CLI version"
+        id: resolve-version
         run: |
-          if [ -z "$INPUT_CLI_VERSION" ]; then
+          if [ -z "${{ inputs.CLI_VERSION }}" ]; then
             version=$(curl -s https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest | jq -r .tag_name)
           else
-            version="$INPUT_CLI_VERSION"
+            version="${{ inputs.CLI_VERSION }}"
           fi
           echo "Resolved version: $version"
-          echo "CLI_VERSION=$version" >> "$GITHUB_ENV"
-          echo "CLI_VERSION=$version" >> "$GITHUB_OUTPUT"
+          echo "CLI_VERSION=$version" >> $GITHUB_ENV
+          echo "CLI_VERSION_TAG_LINK=https://github.com/NoumenaDigital/npl-cli/releases/tag/$version" >> $GITHUB_ENV
 
   calculate_checksums:
     name: "Calculate Checksums"
@@ -141,9 +139,9 @@ jobs:
           SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
           SLACK_COLOR: "660033"
 
-      - name: "Report failure"
-        if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew test> failed for NPL CLI release <${{ env.CLI_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
-          SLACK_COLOR: ${{ job.status }}
+#      - name: "Report failure"
+#        if: ${{ failure() }}
+#        uses: rtCamp/action-slack-notify@v2
+#        env:
+#          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew test> failed for NPL CLI release <${{ env.CLI_VERSION_TAG_LINK }}|${{ env.CLI_VERSION }}>."
+#          SLACK_COLOR: ${{ job.status }}
