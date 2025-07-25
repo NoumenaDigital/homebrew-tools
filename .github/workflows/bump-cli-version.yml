@@ -164,17 +164,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: "Report action required"
-#        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
-#        uses: rtCamp/action-slack-notify@v2
-#        env:
-#          SLACK_TITLE: "Action required"
-#          SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION }}>."
-#          SLACK_COLOR: "660033"
-#
-#      - name: "Report failure"
-#        if: ${{ failure() }}
-#        uses: rtCamp/action-slack-notify@v2
-#        env:
-#          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew test> failed for NPL CLI release <${{ env.CLI_VERSION }}>."
-#          SLACK_COLOR: ${{ job.status }}
+      - name: "Report action required"
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: "Action required"
+          SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION }}>."
+          SLACK_COLOR: "660033"
+
+      - name: "Report failure"
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_MESSAGE: "The <${{ env.CI_PIPELINE_URL }}|homebrew update> failed for NPL CLI release <${{ env.CLI_VERSION }}>."
+          SLACK_COLOR: ${{ job.status }}
