@@ -152,6 +152,13 @@ jobs:
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: "Enable auto-merge"
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
+        run: |
+          gh pr merge "${{ steps.cpr.outputs.pull-request-url }}" --auto --merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: "Report action required"
         if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
         uses: rtCamp/action-slack-notify@v2
