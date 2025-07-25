@@ -1,6 +1,9 @@
 name: "Bump NPL CLI version"
 
 on:
+  pull_request:
+      branches:
+      - master
   workflow_dispatch:
     inputs:
       CLI_VERSION:
@@ -102,14 +105,16 @@ jobs:
       linux_aarch64_SHA256: ${{ needs.calculate_checksums.outputs.linux_aarch64 }}
       linux_x86_64_SHA256: ${{ needs.calculate_checksums.outputs.linux_x86_64 }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_USER: ${{ secrets.GH_USER }}
+      GH_EMAIL: ${{ secrets.GH_EMAIL }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
 
       - name: "Set Git user"
         run: |
-          git config --global user.name "noumenadigital-bot"
-          git config --global user.email "noumenadigital-bot@users.noreply.github.com"
+          git config --global user.name "$GH_USER"
+          git config --global user.email "GH_EMAIL"
 
       - name: "Install Homebrew"
         run: |
