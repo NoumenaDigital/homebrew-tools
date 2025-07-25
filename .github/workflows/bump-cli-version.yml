@@ -16,6 +16,7 @@ env:
   SLACK_TITLE: " "
   SLACK_FOOTER: "homebrew-tools#bump-cli-version.yml"
   MSG_MINIMAL: true
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   resolve_version:
@@ -28,9 +29,12 @@ jobs:
         id: resolve
         env:
           INPUT_CLI_VERSION: ${{ inputs.CLI_VERSION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$INPUT_CLI_VERSION" ]; then
-            response=$(curl -s -w "%{http_code}" -o response.json https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest)
+            response=$(curl -s -w "%{http_code}" -o response.json \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest)
             http_code="${response: -3}"
             if [ "$http_code" -ne 200 ]; then
               echo "Error: Failed to fetch the latest release from GitHub API. HTTP status code: $http_code"
@@ -65,6 +69,7 @@ jobs:
         id: set
         env:
           CLI_VERSION: ${{ needs.resolve_version.outputs.CLI_VERSION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           declare -A filenames=(
             [macos_aarch64]="npl-cli-macos-aarch64-${CLI_VERSION}"
@@ -75,7 +80,7 @@ jobs:
           filename="${filenames[${{ matrix.arch }}]}"
           url="https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/$filename"
           echo "Downloading $url"
-          if ! curl -L --fail -o "$filename" "$url"; then
+          if ! curl -L --fail -H "Authorization: Bearer $GITHUB_TOKEN" -o "$filename" "$url"; then
             echo "Error: Failed to download $url" >&2
             exit 1
           fi
@@ -97,6 +102,7 @@ jobs:
       macos_x86_64_SHA256: ${{ needs.calculate_checksums.outputs.macos_x86_64 }}
       linux_aarch64_SHA256: ${{ needs.calculate_checksums.outputs.linux_aarch64 }}
       linux_x86_64_SHA256: ${{ needs.calculate_checksums.outputs.linux_x86_64 }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
@@ -116,7 +122,7 @@ jobs:
         run: |
           if [ ! -f npl.rb ]; then
             echo "Downloading npl.rb from master"
-            curl -O https://raw.githubusercontent.com/NoumenaDigital/homebrew-tools/master/npl.rb
+            curl -H "Authorization: Bearer $GITHUB_TOKEN" -O https://raw.githubusercontent.com/NoumenaDigital/homebrew-tools/master/npl.rb
           fi
 
       - name: "Update formula file"
