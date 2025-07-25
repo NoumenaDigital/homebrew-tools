@@ -1,9 +1,6 @@
 name: "Bump NPL CLI version"
 
 on:
-  pull_request:
-      branches:
-      - master
   workflow_dispatch:
     inputs:
       CLI_VERSION:
