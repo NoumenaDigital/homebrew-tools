@@ -30,7 +30,17 @@ jobs:
           INPUT_CLI_VERSION: ${{ inputs.CLI_VERSION }}
         run: |
           if [ -z "$INPUT_CLI_VERSION" ]; then
-            version=$(curl -s https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest | jq -r .tag_name)
+            response=$(curl -s -w "%{http_code}" -o response.json https://api.github.com/repos/NoumenaDigital/npl-cli/releases/latest)
+            http_code="${response: -3}"
+            if [ "$http_code" -ne 200 ]; then
+              echo "Error: Failed to fetch the latest release from GitHub API. HTTP status code: $http_code"
+              exit 1
+            fi
+            version=$(jq -r .tag_name response.json)
+            if [ -z "$version" ] || [ "$version" == "null" ]; then
+              echo "Error: Failed to parse the version from the API response."
+              exit 1
+            fi
           else
             version="$INPUT_CLI_VERSION"
           fi
@@ -65,7 +75,14 @@ jobs:
           filename="${filenames[${{ matrix.arch }}]}"
           url="https://github.com/NoumenaDigital/npl-cli/releases/download/${CLI_VERSION}/$filename"
           echo "Downloading $url"
-          curl -L -o "$filename" "$url"
+          if ! curl -L --fail -o "$filename" "$url"; then
+            echo "Error: Failed to download $url" >&2
+            exit 1
+          fi
+          if [ ! -s "$filename" ]; then
+            echo "Error: Downloaded file $filename is empty or invalid" >&2
+            exit 1
+          fi
           sha256=$(shasum -a 256 "$filename" | awk '{print $1}')
           echo "${{ matrix.arch }} checksum: $sha256"
           echo "${{ matrix.arch }}=$sha256" >> "$GITHUB_OUTPUT"
