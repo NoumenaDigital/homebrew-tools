@@ -162,7 +162,7 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_TITLE: "Action required"
-          SLACK_MESSAGE: "Please merge <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION }}>."
+          SLACK_MESSAGE: "Please approve <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION }}>."
           SLACK_COLOR: "660033"
 
       - name: "Report failure"
