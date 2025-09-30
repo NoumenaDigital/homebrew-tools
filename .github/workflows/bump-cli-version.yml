@@ -137,6 +137,12 @@ jobs:
         run: |
           brew test --verbose NoumenaDigital/tools/npl
 
+      - uses: tibdex/github-app-token@v2.1.0
+        id: generate-token-pr
+        with:
+          app_id: ${{ secrets.GH_ND_TOKEN_PR_APP_ID }}
+          private_key: ${{ secrets.GH_ND_TOKEN_PR_APP_PRIVATE_KEY }}
+
       - name: "Create pull request"
         uses: peter-evans/create-pull-request@v6
         id: cpr
@@ -146,7 +152,7 @@ jobs:
           branch: "Bump-cli-${{ env.CLI_VERSION }}"
           base: "master"
           delete-branch: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate-token-pr.outputs.token }}
 
       - name: "Enable auto-merge"
         if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
@@ -155,12 +161,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Report action required"
+      - name: "Approve pull request"
         if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
+        uses: juliangruber/approve-pull-request-action@v2
+        with:
+          number: ${{ steps.cpr.outputs.pull-request-number }}
+          github-token: ${{ env.GITHUB_TOKEN }}
+
+      - name: "Report success"
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'closed' }}
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_TITLE: "Action required"
-          SLACK_MESSAGE: "Please approve <${{ steps.cpr.outputs.pull-request-url }}|homebrew-tools PR #${{ steps.cpr.outputs.pull-request-number }}> to bump the NPL CLI version to <${{ env.CLI_VERSION }}>."
+          SLACK_TITLE: "Automation succeeded"
+          SLACK_MESSAGE: "Homebrew: NPL CLI version bumped successfully to <${{ env.CLI_VERSION }}> - #${{ steps.cpr.outputs.pull-request-number }}> ."
           SLACK_COLOR: "660033"
 
       - name: "Report failure"
