@@ -1,26 +1,26 @@
 class Npl < Formula
   desc "CLI for NPL (NOUMENA Protocol Language)"
   homepage "https://github.com/NoumenaDigital/npl-cli"
-  version "2025.2.7"
+  version "2025.2.7-1"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/NoumenaDigital/npl-cli/releases/download/#{version}/npl-cli-macos-aarch64-#{version}"
-      sha256 "a52ab806b19ef3f30aea26296854e9ef7e079385f70d69002baaf5cf6bb2d36a"
+      sha256 "555261e78eb1538e3673daf8bb1e4bdf505b691d8b829597794cdc181409bb6d"
     else
       url "https://github.com/NoumenaDigital/npl-cli/releases/download/#{version}/npl-cli-macos-x86_64-#{version}"
-      sha256 "67ccf4859a1d0c6eb654c2530d948dae880ab39779cc79a84780d4871047f83d"
+      sha256 "82b80ff35905f067f80e3f80089fd004f86d702716f37a276a7e3b0b2ce8bd4e"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/NoumenaDigital/npl-cli/releases/download/#{version}/npl-cli-linux-aarch64-#{version}"
-      sha256 "ca72ce0664830693e92b5cf3d7ccae26457e3cc050337fbfc75f1aa52b2a90fb"
+      sha256 "171a828bfdfea16d61227f2a27d762a4c7bca7e4d39539a66d59b0dc20c15727"
     else
       url "https://github.com/NoumenaDigital/npl-cli/releases/download/#{version}/npl-cli-linux-x86_64-#{version}"
-      sha256 "fb535b76ef274315ce45468ef3637bfd0bf708707a5c5e8a2fa854d46872452b"
+      sha256 "ae1995bde56e61f7be6c5b7a5e22be46e1d3f08202ba2a8dce8f4e189fd7fe08"
     end
   end
 
